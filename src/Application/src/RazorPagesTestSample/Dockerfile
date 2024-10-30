@@ -1,27 +1,18 @@
-# Use the official .NET 8 SDK image as a build stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-
-# Set the working directory
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 WORKDIR /app
 
-# Copy the project file and restore dependencies
+# Copy csproj and restore as distinct layers
 COPY *.csproj ./
 RUN dotnet restore
 
-# Copy the rest of the application code
+# Copy everything else and build
 COPY . ./
-
-# Build the application
 RUN dotnet publish -c Release -o out
 
-# Use the official .NET 8 runtime image as a runtime stage
+# Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
-
-# Set the working directory
 WORKDIR /app
-
-# Copy the built application from the build stage
-COPY --from=build /app/out .
-
-# Set the entry point for the application
+COPY --from=build-env /app/out .
+# Default ASP.NET port changed with .NET 8.0
+ENV ASPNETCORE_HTTP_PORTS=80
 ENTRYPOINT ["dotnet", "RazorPagesTestSample.dll"]
