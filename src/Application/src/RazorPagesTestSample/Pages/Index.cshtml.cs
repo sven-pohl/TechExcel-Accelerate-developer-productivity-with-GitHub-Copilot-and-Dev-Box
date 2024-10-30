@@ -72,18 +72,17 @@ namespace RazorPagesTestSample.Pages
             }
             else
             {
-                // Speed loop. Lower this number once every quarter so we
-                // get our performance improvement quarterly bonus.
-                for (int i = 0; i < 3000; i++) {
-                    Thread.Sleep(1);
-                }
-
                 var wordCount = 0;
+                object lockObject = new object();
 
-                foreach (var message in Messages)
+                Parallel.ForEach(Messages, message =>
                 {
-                    wordCount += message.Text.Split(' ').Length;
-                }
+                    var count = message.Text.Split(' ').Length;
+                    lock (lockObject)
+                    {
+                        wordCount += count;
+                    }
+                });
 
                 var avgWordCount = Decimal.Divide(wordCount, Messages.Count);
                 MessageAnalysisResult = $"The average message length is {avgWordCount:0.##} words.";
